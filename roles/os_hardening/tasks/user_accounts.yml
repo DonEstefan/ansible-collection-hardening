@@ -60,6 +60,17 @@
     - os_user_pw_ageing
     - item not in os_users_without_password_ageing
 
+- name: Limit access to home directories of regular (non-system, non-root) accounts
+  file:
+    mode: 0700
+    owner: "{{ item }}"
+    path: "{{ getent_passwd[item][4] }}"
+    state: directory
+  loop: "{{ regular_users }}"
+  when:
+    - os_chmod_home_folders | bool
+    - item not in os_ignore_home_folder_users|default([])
+
 - name: extract system accounts from local user database
   loop: "{{ getent_passwd.keys()|list }}"
   when:
@@ -77,20 +88,3 @@
     password: '*'
     createhome: false
   loop: "{{ system_users }}"
-
-- name: get all home directories in /home, but skip ignored users
-  find:
-    paths: /home/
-    recurse: false
-    file_type: directory
-    excludes: "{{ os_ignore_home_folder_users | join(',') }}"
-  register: home_directories
-  when: os_chmod_home_folders | bool
-
-- name: set ownership of /home directories to 0700
-  file:
-    mode: 0700
-    path: "{{ item.path }}"
-    state: directory
-  loop: "{{ home_directories.files }}"
-  when: os_chmod_home_folders | bool
