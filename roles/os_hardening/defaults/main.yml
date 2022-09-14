@@ -25,7 +25,11 @@ os_security_users_allow: []
 os_ignore_home_folder_users: ['lost+found']
 
 # Set to false to disable password age enforcement on existing users
+os_user_pw_ageing: true
 os_rootuser_pw_ageing: false
+
+#List of users, where password ageing should not enforced
+os_users_without_password_ageing: []
 
 # When enabled and there are multiple users with UID=0, only "root" will be kept. Others will be deleted.
 os_remove_additional_root_users: false

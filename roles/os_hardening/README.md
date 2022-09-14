@@ -233,6 +233,12 @@ We know that this is the case on Raspberry Pi.
 - `os_chmod_rootuser_home_folder`
   - Default: `true`
   - Description: Set to `false` to disable "chmod 700" of root's home folder
+- `os_user_pw_ageing`
+  - Default: `true`
+  - Description: Set to false to disable password age enforcement on existing users
+- `os_users_without_password_ageing`
+  - Default: `[]`
+  - Description: List of users, where password ageing should not enforced
 - `os_rootuser_pw_ageing`
   - Default: `false`
   - Description: Set to true to enforce password age settings for root user(s)
