@@ -5,6 +5,10 @@
     #creates a dict for each user containing UID/HOMEDIR etc...
   when: getent_passwd is undefined # skip this task if "getent" has run before
 
+- name: Read local linux shadow database
+  getent:
+    database: shadow
+
 - name: extract root account(s) from local user database
   loop: "{{ getent_passwd.keys()|list }}"
   when:
@@ -28,7 +32,10 @@
     password_expire_min: "{{ os_auth_pw_min_age }}"
     password_expire_max: "{{ os_auth_pw_max_age }}"
   loop: "{{ root_users }}"
-  when: os_rootuser_pw_ageing|bool
+  when: 
+    - os_rootuser_pw_ageing | bool
+    - getent_shadow[item][0] is not match("\*") # password hashes containing illegal characters like "*" are unusable (locked) and don't need to age
+    - getent_shadow[item][0] is not match("\!") # password hashes containing illegal characters like "!" are unusable (locked) and don't need to age
 
 - name: remove additional users with UID=0 ("root" user is not touched)
   user:
@@ -59,6 +66,8 @@
   when:
     - os_user_pw_ageing
     - item not in os_users_without_password_ageing
+    - getent_shadow[item][0] is not match("\*") # password hashes containing illegal characters like "*" are unusable (locked) and don't need to age
+    - getent_shadow[item][0] is not match("\!") # password hashes containing illegal characters like "!" are unusable (locked) and don't need to age
 
 - name: Limit access to home directories of regular (non-system, non-root) accounts
   file:
@@ -81,10 +90,18 @@
   set_fact:
     system_users: "{{ system_users|default([]) + [item] }}"
 
-- name: remove shell+password for linux system accounts
+- name: remove shell for linux system accounts
   user:
     name: '{{ item }}'
     shell: '{{ os_nologin_shell_path }}'
+    createhome: false
+  loop: "{{ system_users }}"
+
+- name: lock passwords from linux system accounts
+  user:
+    name: '{{ item }}'
     password: '*'
     createhome: false
   loop: "{{ system_users }}"
+  when:
+    - getent_shadow[item][0] is not match("\!") # password hashes containing illegal characters like "!" are unusable already (locked)
