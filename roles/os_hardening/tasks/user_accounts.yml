@@ -16,10 +16,11 @@
   set_fact:
     root_users: "{{ root_users|default([]) + [item] }}"
 
-- name: set ownership of root user home directory(s) to 0700
+- name: limit access to root user home directory(s)
   file:
-    mode: 0700
+    mode: o-rwx
     owner: "{{ item }}"
+    group: root
     path: "{{ getent_passwd[item][4] }}"
     state: directory
   loop: "{{ root_users }}"
